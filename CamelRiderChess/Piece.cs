@@ -69,6 +69,7 @@ namespace CamelRiderChess
         {
 
             this.BackColor = System.Drawing.Color.FromArgb(100, 150, 0, 0);
+            if(this is King) { return; }
             this.takeable = true;
 
         }
@@ -76,7 +77,7 @@ namespace CamelRiderChess
         public virtual void find_possible_moves() { /*.....*/ }
 
         public virtual void find_possible_victims() { /*.....*/ }
-
+      
         public Piece move()
         {
             if (takeable)
@@ -98,7 +99,7 @@ namespace CamelRiderChess
                         if (!piece.whitespace)
                             board.reset_play_board();
                         piece.find_possible_moves();
-                        piece.find_possible_victims();
+                        piece.find_possible_victims();                       
                     }
 
                     Piece temp_piece = piece.move();
