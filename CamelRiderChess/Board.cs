@@ -133,6 +133,7 @@ namespace CamelRiderChess
                             if (!piece1.whitespace)
                                 reset_play_board();
                             piece.find_possible_moves();
+                            piece.find_possible_victims();
                         }
 
                         Piece temp_piece = piece1.move();
