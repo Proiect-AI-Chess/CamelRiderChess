@@ -44,14 +44,27 @@ namespace CamelRiderChess
             this.build_play_area();
         }
 
-        public void resize_play_area(int width, int height)
+        public void resize_play_area(int formWidth, int formHeight)
         {
-            this.Height = (int)(0.85 * ((double)height));
-            this.Width = this.Height;
-            this.Top = (height - this.Height) / 2;
-            this.Left = (width - this.Width) / 2;
+            int cellSize = 68; // Dimensiunea unei celule (68x68)
+            int boardSize = cellSize * 10; // Tabla este 10x10
 
+            // Ajustăm dimensiunea tablei la dimensiunea ferestrei
+            this.Width = boardSize;
+            this.Height = boardSize;
+
+            // Ajustăm fiecare celulă la dimensiunea de 68x68
+            foreach (Control control in this.Controls)
+            {
+                control.Width = cellSize;
+                control.Height = cellSize;
+            }
+
+            // Centrează tabla în fereastră
+            this.Top = (formHeight - this.Height) / 2;
+            this.Left = (formWidth - this.Width) / 2;
         }
+
 
 
         public void build_play_area()
