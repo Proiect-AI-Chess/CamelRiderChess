@@ -123,6 +123,27 @@ namespace CamelRiderChess
                     }
                     play_board[j][i] = piece;
                     this.Controls.Add(piece, j, i);
+
+                    piece.Click += new EventHandler((sender, e) =>
+                    {
+                        Piece piece1 = (Piece)sender;
+
+                        if (!piece1.movable && !piece1.takeable && piece1.white == player_turn)
+                        {
+                            if (!piece1.whitespace)
+                                reset_play_board();
+                            piece.find_possible_moves();
+                        }
+
+                        Piece temp_piece = piece1.move();
+                        if (temp_piece != null)
+                        {
+                            redraw_play_area(temp_piece);
+                        }
+
+                        if (piece1.white == player_turn)
+                            selected = piece;
+                    });
                 }
             }
         }
@@ -134,6 +155,18 @@ namespace CamelRiderChess
                     play_board[i][j].make_unmovable(i, j);
                     play_board[i][j].make_untakeable(i, j);
                 }
+        }
+
+        public void redraw_play_area(Piece p1)
+        {
+            if (selected != null)
+            {
+                this.Controls.Remove(p1);
+                this.Controls.Remove(selected);
+                this.Controls.Add(p1, p1.x, p1.y);
+                this.Controls.Add(selected, selected.x, selected.y);
+            }
+            reset_play_board();
         }
 
     }
