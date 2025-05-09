@@ -65,8 +65,6 @@ namespace CamelRiderChess
             this.Left = (formWidth - this.Width) / 2;
         }
 
-
-
         public void build_play_area()
         {
             board_game = JsonSerializer.Deserialize<String[][]>(System.IO.File.ReadAllText("board.json"));
@@ -128,6 +126,15 @@ namespace CamelRiderChess
                 }
             }
         }
-        
+        public void reset_play_board()
+        {
+            for (int i = 0; i < 10; i++)
+                for (int j = 0; j < 10; j++)
+                {
+                    play_board[i][j].make_unmovable(i, j);
+                    play_board[i][j].make_untakeable(i, j);
+                }
+        }
+
     }
 }

@@ -16,6 +16,9 @@ namespace CamelRiderChess
         public int y;
         public bool whitespace;
         public Board board;
+        public bool movable;
+        public bool takeable;
+        public int no_moves;
 
 
         public Piece(Board board, int x, int y)
@@ -47,6 +50,30 @@ namespace CamelRiderChess
                 this.BackColor = Color.SaddleBrown;
         }
 
+        public void make_movable()
+        {
+            this.BackColor = System.Drawing.Color.FromArgb(100, 64, 224, 208);
+            this.movable = true;
+        }
+        public void make_unmovable(int x, int y)
+        {
+            square(x, y);
+            this.movable = false;
+        }
+        public void make_untakeable(int x, int y)
+        {
+            square(x, y);
+            this.takeable = false;
+        }
+        public void make_victim()
+        {
+
+            this.BackColor = System.Drawing.Color.FromArgb(100, 150, 0, 0);
+            this.takeable = true;
+
+        }
+
+        public virtual void find_possible_moves() { /*.....*/ }
 
     }
 }
