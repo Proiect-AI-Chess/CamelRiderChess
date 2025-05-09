@@ -27,18 +27,18 @@ namespace CamelRiderChess
             {
                 if (white)
                 {
-                    if (y - 1 >= 0 && board.play_board[x][y - 1].GetType().Name == "Piesa")
+                    if (y - 1 >= 0 && board.play_board[x][y - 1].GetType().Name == "Piece")
                         board.play_board[x][y - 1].make_movable();
 
-                    if (y - 2 >= 0 && board.play_board[x][y - 2].GetType().Name == "Piesa")
+                    if (y - 2 >= 0 && board.play_board[x][y - 2].GetType().Name == "Piece")
                         board.play_board[x][y - 2].make_movable();
 
                 }
                 else
                 {
-                    if (y + 1 < board.play_board.Length && board.play_board[x][y + 1].GetType().Name == "Piesa")
+                    if (y + 1 < board.play_board.Length && board.play_board[x][y + 1].GetType().Name == "Piece")
                         board.play_board[x][y + 1].make_movable();
-                    if (y + 2 < board.play_board.Length && board.play_board[x][y + 2].GetType().Name == "Piesa")
+                    if (y + 2 < board.play_board.Length && board.play_board[x][y + 2].GetType().Name == "Piece")
                         board.play_board[x][y + 2].make_movable();
                 }
 
@@ -47,12 +47,12 @@ namespace CamelRiderChess
             {
                 if (white)
                 {
-                    if (board.play_board[x][y - 1].GetType().Name == "Piesa")
+                    if (board.play_board[x][y - 1].GetType().Name == "Piece")
                         board.play_board[x][y - 1].make_movable();
                 }
                 else
                 {
-                    if (board.play_board[x][y + 1].GetType().Name == "Piesa")
+                    if (board.play_board[x][y + 1].GetType().Name == "Piece")
                         board.play_board[x][y + 1].make_movable();
                 }
 
