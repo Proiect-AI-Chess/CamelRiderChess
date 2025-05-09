@@ -75,6 +75,8 @@ namespace CamelRiderChess
 
         public virtual void find_possible_moves() { /*.....*/ }
 
+        public virtual void find_possible_victims() { /*.....*/ }
+
         public Piece move()
         {
             if (takeable)
@@ -96,6 +98,7 @@ namespace CamelRiderChess
                         if (!piece.whitespace)
                             board.reset_play_board();
                         piece.find_possible_moves();
+                        piece.find_possible_victims();
                     }
 
                     Piece temp_piece = piece.move();

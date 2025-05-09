@@ -58,5 +58,24 @@ namespace CamelRiderChess
 
             }
         }
+
+        public override void find_possible_victims()
+        {
+            if (white)
+            {
+                if (y - 1 >= 0 && x - 1 >= 0 && board.play_board[x - 1][y - 1].white != this.white && !board.play_board[x - 1][y - 1].whitespace)
+                    board.play_board[x - 1][y - 1].make_victim();
+                if (y - 1 >= 0 && x + 1 < board.play_board.Length && board.play_board[x + 1][y - 1].white != this.white && !board.play_board[x + 1][y - 1].whitespace)
+                    board.play_board[x + 1][y - 1].make_victim();
+            }
+            else
+            {
+                if (y + 1 < board.play_board.Length && x - 1 >= 0 && board.play_board[x - 1][y + 1].white != this.white && !board.play_board[x - 1][y + 1].whitespace)
+                    board.play_board[x - 1][y + 1].make_victim();
+                if (y + 1 < board.play_board.Length && x + 1 < board.play_board.Length && board.play_board[x + 1][y + 1].white != this.white && !board.play_board[x + 1][y + 1].whitespace)
+                    board.play_board[x + 1][y + 1].make_victim();
+            }
+        }
+
     }
 }
