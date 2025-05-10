@@ -63,7 +63,7 @@ internal class King : Piece
     {
         if (y + b >= 0 && y + b < board.play_board.Length && x + a >= 0 && x + a < board.play_board.Length)
         {
-            if (board.play_board[x + a][y + b].GetType().Name == "Piesa" || board.play_board[x + a][y + b].whitespace)
+            if (board.play_board[x + a][y + b].GetType().Name == "Piece")
             {
                 board.play_board[x + a][y + b].make_movable();
             }
