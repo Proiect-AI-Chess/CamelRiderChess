@@ -20,7 +20,7 @@ namespace CamelRiderChess
             this.whitespace = false;
         }
 
-        public override void find_possible_moves()
+        /*public override void find_possible_moves() //varianta veche
         {
             board.reset_play_board();
             if (no_moves == 0)
@@ -57,8 +57,45 @@ namespace CamelRiderChess
                 }
 
             }
-        }
+        }*/
+        public override void find_possible_moves()
+        {
+            board.reset_play_board();
 
+            if (no_moves == 0)
+            {
+                if (white)
+                {
+                    if (y - 1 >= 0 && board.play_board[x][y - 1].whitespace)
+                        board.play_board[x][y - 1].make_movable();
+
+                    if (y - 2 >= 0 && board.play_board[x][y - 1].whitespace && board.play_board[x][y - 2].whitespace)
+                        board.play_board[x][y - 2].make_movable();
+                }
+                else
+                {
+                    if (y + 1 < board.play_board.Length && board.play_board[x][y + 1].whitespace)
+                        board.play_board[x][y + 1].make_movable();
+
+                    if (y + 2 < board.play_board.Length &&
+                        board.play_board[x][y + 1].whitespace && board.play_board[x][y + 2].whitespace)
+                        board.play_board[x][y + 2].make_movable();
+                }
+            }
+            else
+            {
+                if (white)
+                {
+                    if (y - 1 >= 0 && board.play_board[x][y - 1].whitespace)
+                        board.play_board[x][y - 1].make_movable();
+                }
+                else
+                {
+                    if (y + 1 < board.play_board.Length && board.play_board[x][y + 1].whitespace)
+                        board.play_board[x][y + 1].make_movable();
+                }
+            }
+        }
         public override void find_possible_victims()
         {
             if (white)
