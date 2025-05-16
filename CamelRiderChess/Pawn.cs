@@ -114,5 +114,12 @@ namespace CamelRiderChess
             }
         }
 
+        public override bool CanAttackPosition(int targetX, int targetY)
+        {
+            int direction = white ? -1 : 1;
+
+            return (targetY == this.y + direction &&
+                    (targetX == this.x + 1 || targetX == this.x - 1));
+        }
     }
 }
