@@ -1,4 +1,5 @@
 ﻿using CamelRiderChess;
+using System;
 
 internal class King : Piece
 {
@@ -20,43 +21,77 @@ internal class King : Piece
         {
             foreach (var piece in row)
             {
-                if (piece.white != this.white && !piece.whitespace && piece.takeable)
+                if (!piece.whitespace && piece.white != this.white)
                 {
-                    if (piece.movable && piece.x == this.x && piece.y == this.y)
-                    {
-                        return true; // Dacă există o piesă care poate captura regele
-                    }
+                    if (piece.CanAttackPosition(this.x, this.y))
+                        return true;
                 }
             }
         }
-        return false; // Dacă nu există piesă care poate captura regele
+        return false;
     }
 
-    // Verifică dacă regele este în șah-mat
     public bool IsCheckmate()
     {
         if (!IsInCheck())
-            return false; // Dacă nu este în șah, nu poate fi șah-mat
+            return false; // Dacă nu e în șah, nu poate fi șah-mat
 
-        // Verificăm dacă există o mutare care ar putea salva regele
+        // Pentru fiecare piesă a jucătorului curent
         foreach (var row in board.play_board)
         {
             foreach (var piece in row)
             {
-                if (piece.white == this.white && piece.movable)
+                if (piece.white == this.white && !piece.whitespace)
                 {
+                    // Găsim mutările posibile ale piesei
                     piece.find_possible_moves();
-                    foreach (var targetPiece in board.play_board)
+
+                    // Pentru fiecare pătrat de pe tabla de joc, verificăm dacă e mutabil
+                    for (int i = 0; i < board.play_board.Length; i++)
                     {
-                        if (!IsInCheck())
-                            return false; // Dacă regele nu mai este în șah după mutare
+                        for (int j = 0; j < board.play_board[i].Length; j++)
+                        {
+                            var targetSquare = board.play_board[i][j];
+
+                            if (targetSquare.movable || targetSquare.takeable)
+                            {
+                                // Simulăm mutarea
+                                var originalX = piece.x;
+                                var originalY = piece.y;
+
+                                var capturedPiece = board.play_board[i][j];
+                                bool capturedWasWhitespace = capturedPiece.whitespace;
+
+                                // Mutăm piesa
+                                board.play_board[i][j] = piece;
+                                board.play_board[originalX][originalY] = new Piece(board, originalX, originalY); // pătrat gol
+
+                                piece.x = i;
+                                piece.y = j;
+
+                                bool stillInCheck = IsInCheck();
+
+                                // Revenim mutarea
+                                board.play_board[originalX][originalY] = piece;
+                                board.play_board[i][j] = capturedPiece;
+
+                                piece.x = originalX;
+                                piece.y = originalY;
+
+                                if (!stillInCheck)
+                                {
+                                    return false; // Regele poate fi salvat cu această mutare
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
 
-        return true; // Dacă nu există mutări care pot salva regele
+        return true; // Nu există mutări care să scoată regele din șah -> șah-mat
     }
+
 
     // Funcție pentru a marca mutările posibile ale regelui
     void king(int x, int y, int a, int b)
@@ -98,5 +133,14 @@ internal class King : Piece
         {
             this.BackColor = System.Drawing.Color.Transparent;  // Fundal normal dacă nu este în șah sau șah-mat
         }
+    }
+
+    public override bool CanAttackPosition(int targetX, int targetY)
+    {
+        int dx = Math.Abs(targetX - this.x);
+        int dy = Math.Abs(targetY - this.y);
+
+        // Regele poate ataca poziții la o distanță de maxim 1 pe orizontală, verticală sau diagonală
+        return (dx <= 1 && dy <= 1) && !(dx == 0 && dy == 0);
     }
 }
