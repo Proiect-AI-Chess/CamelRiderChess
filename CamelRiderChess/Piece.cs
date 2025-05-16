@@ -42,7 +42,7 @@ namespace CamelRiderChess
             this.whitespace = true;
         }
 
-        void square(int x, int y)
+        public void square(int x, int y)
         {
             if ((x + y) % 2 == 0)
                 this.BackColor = Color.Beige;
@@ -77,9 +77,19 @@ namespace CamelRiderChess
         public virtual void find_possible_moves() { /*.....*/ }
 
         public virtual void find_possible_victims() { /*.....*/ }
-      
+
         public Piece move()
         {
+            // Dacă piesa nu poate fi mutată/take-uită, nu facem nimic
+            if (!takeable && !movable)
+                return null;
+
+            // Verificăm dacă mutarea ar pune regele în șah (nu permitem mutarea)
+            if (board.WouldBeInCheckAfterMove(board.selected, x, y))
+            {
+                MessageBox.Show("Mutare invalidă: regele tău ar fi în șah!");
+                return null;
+            }
             if (takeable)
             {
                 int temp_x = board.selected.x;
@@ -99,7 +109,7 @@ namespace CamelRiderChess
                         if (!piece.whitespace)
                             board.reset_play_board();
                         piece.find_possible_moves();
-                        piece.find_possible_victims();                       
+                        piece.find_possible_victims();
                     }
 
                     Piece temp_piece = piece.move();
@@ -117,6 +127,31 @@ namespace CamelRiderChess
                 board.discarded.Add(this);
                 board.reset_play_board();
                 board.player_turn = !board.player_turn;
+                // După fiecare mutare, verificăm dacă regele e în șah
+                foreach (var row in board.play_board)
+                {
+                    foreach (var piece in row)
+                    {
+                        if (piece is King king && king.white == board.player_turn)
+                        {
+                            if (king.IsCheckmate())
+                            {
+                                MessageBox.Show("Regele e în șah mat!");
+                                king.BackColor = System.Drawing.Color.Red; // Fundal roșu pentru șah-mat
+                            }
+                            else if (king.IsInCheck())
+                            {
+                                MessageBox.Show("Regele e în șah!");
+                                king.BackColor = System.Drawing.Color.Yellow;
+                            }
+                            else
+                            {
+                                king.square(king.x, king.y); // resetăm culoarea
+                            }
+                        }
+                    }
+                }
+
                 return piece_whitespace;
             }
 
@@ -133,9 +168,40 @@ namespace CamelRiderChess
                 board.play_board[x][y] = this;
                 board.reset_play_board();
                 board.player_turn = !board.player_turn;
+                // După fiecare mutare, verificăm dacă regele e în șah
+                foreach (var row in board.play_board)
+                {
+                    foreach (var piece in row)
+                    {
+                        if (piece is King king && king.white == board.player_turn)
+                        {
+                            if (king.IsCheckmate())
+                            {
+                                MessageBox.Show("Regele e în șah mat!");
+                                king.BackColor = System.Drawing.Color.Red; // Fundal roșu pentru șah-mat
+                            }
+                            else if (king.IsInCheck())
+                            {
+                                MessageBox.Show("Regele e în șah!");
+                                king.BackColor = System.Drawing.Color.Yellow;
+                            }
+                            else
+                            {
+                                king.square(king.x, king.y); // resetăm culoarea
+                            }
+                        }
+                    }
+                }
+
                 return this;
             }
             return null;
+        }
+
+        public virtual bool CanAttackPosition(int targetX, int targetY)
+        {
+            // Implicit, o piesă generică nu atacă nimic
+            return false;
         }
     }
 }
