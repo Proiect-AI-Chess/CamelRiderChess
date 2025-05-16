@@ -170,5 +170,75 @@ namespace CamelRiderChess
             reset_play_board();
         }
 
+        internal King FindKing(bool white)
+        {
+            foreach (var row in play_board)
+            {
+                foreach (var piece in row)
+                {
+                    if (piece is King king && king.white == white)
+                        return king;
+                }
+            }
+            return null; // Ar trebui să nu se întâmple niciodată dacă regele există pe tablă
+        }
+
+
+        public bool WouldBeInCheckAfterMove(Piece movingPiece, int targetX, int targetY)
+        {
+            int originalX = movingPiece.x;
+            int originalY = movingPiece.y;
+
+            Piece targetPiece = play_board[targetX][targetY];
+
+            // Mutăm temporar piesa
+            play_board[targetX][targetY] = movingPiece;
+            play_board[originalX][originalY] = new Piece(this, originalX, originalY); // pătrat gol
+
+            int oldX = movingPiece.x;
+            int oldY = movingPiece.y;
+            movingPiece.x = targetX;
+            movingPiece.y = targetY;
+
+            // Verificăm dacă regele jucătorului e în șah
+            King king = FindKing(movingPiece.white);
+            bool inCheck = king.IsInCheck();
+
+            // Revenim la poziția inițială
+            play_board[originalX][originalY] = movingPiece;
+            play_board[targetX][targetY] = targetPiece;
+            movingPiece.x = oldX;
+            movingPiece.y = oldY;
+
+            return inCheck;
+        }
+
+        public bool HasAnyValidMove(bool whiteToMove)
+        {
+            foreach (var row in play_board)
+            {
+                foreach (var piece in row)
+                {
+                    if (!piece.whitespace && piece.white == whiteToMove)
+                    {
+                        piece.find_possible_moves();
+                        piece.find_possible_victims();
+
+                        for (int i = 0; i < play_board.Length; i++)
+                        {
+                            for (int j = 0; j < play_board[i].Length; j++)
+                            {
+                                if ((play_board[i][j].movable || play_board[i][j].takeable) &&
+                                    !WouldBeInCheckAfterMove(piece, i, j))
+                                {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
     }
 }
