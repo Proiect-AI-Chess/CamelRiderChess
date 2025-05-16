@@ -46,5 +46,29 @@ namespace CamelRiderChess
             }
 
         }
+
+        public override bool CanAttackPosition(int targetX, int targetY)
+        {
+            if (targetX != this.x && targetY != this.y)
+                return false; // mutare invalidă pentru tură
+
+            int stepX = targetX == this.x ? 0 : (targetX > this.x ? 1 : -1);
+            int stepY = targetY == this.y ? 0 : (targetY > this.y ? 1 : -1);
+
+            int currentX = this.x + stepX;
+            int currentY = this.y + stepY;
+
+            while (currentX != targetX || currentY != targetY)
+            {
+                if (!board.play_board[currentX][currentY].whitespace) // Calea este blocată
+                    return false;
+                currentX += stepX;
+                currentY += stepY;
+            }
+
+            // Poate ataca dacă ținta este ocupată de piesă adversă sau liberă (captură sau mutare)
+            var targetPiece = board.play_board[targetX][targetY];
+            return targetPiece.whitespace || targetPiece.white != this.white;
+        }
     }
 }
