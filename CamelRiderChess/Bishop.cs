@@ -49,5 +49,31 @@ namespace CamelRiderChess
             }
 
         }
+        public override bool CanAttackPosition(int targetX, int targetY)
+        {
+            int dx = targetX - this.x;
+            int dy = targetY - this.y;
+
+            if (Math.Abs(dx) != Math.Abs(dy))
+                return false; // Nu e diagonală
+
+            int stepX = dx > 0 ? 1 : -1;
+            int stepY = dy > 0 ? 1 : -1;
+
+            int currentX = this.x + stepX;
+            int currentY = this.y + stepY;
+
+            while (currentX != targetX && currentY != targetY)
+            {
+                if (!board.play_board[currentX][currentY].whitespace)
+                    return false;
+                currentX += stepX;
+                currentY += stepY;
+            }
+
+            var targetPiece = board.play_board[targetX][targetY];
+            return targetPiece.whitespace || targetPiece.white != this.white;
+        }
     }
 }
+
