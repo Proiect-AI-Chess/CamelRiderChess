@@ -297,5 +297,12 @@ namespace CamelRiderChess
                     board.play_board[x + 3][y + 1].make_victim();
             }
         }
+        public override bool CanAttackPosition(int targetX, int targetY)
+        {
+            int dx = Math.Abs(targetX - this.x);
+            int dy = Math.Abs(targetY - this.y);
+
+            return (dx == 3 && dy == 1) || (dx == 1 && dy == 3);
+        }
     }
 }
