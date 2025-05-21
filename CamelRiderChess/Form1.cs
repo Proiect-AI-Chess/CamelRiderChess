@@ -47,7 +47,59 @@ namespace CamelRiderChess
         {
             board.resize_play_area(this.Width, this.Height);
         }
-        
 
+        public void UpdateChessBoard(string move)
+        {
+            try
+            {
+                // Parsăm mutarea primită
+                string[] parts = move.Split('-');
+                if (parts.Length != 2)
+                {
+                    MessageBox.Show("Mutare invalidă: " + move);
+                    return;
+                }
+
+                // Obținem poziția de plecare și destinație din mutare
+                string from = parts[0];
+                string to = parts[1];
+
+                // Convertim pozițiile de la text la coordonate pe tablă
+                int fromX = from[0] - 'A';
+                int fromY = int.Parse(from[1].ToString()) - 1;
+                int toX = to[0] - 'A';
+                int toY = int.Parse(to[1].ToString()) - 1;
+
+                // Găsim piesa care trebuie mutată și o mutăm
+                Piece pieceToMove = board.play_board[fromX][fromY];
+                Piece pieceToRemove = board.play_board[toX][toY];
+
+                // Verificăm dacă mutarea este validă
+                if (pieceToMove != null)
+                {
+                    // Mutăm piesa pe noua poziție
+                    board.play_board[fromX][fromY] = null;
+                    board.play_board[toX][toY] = pieceToMove;
+                    pieceToMove.Location = new Point(toX, toY);
+
+                    // Dacă există o piesă pe poziția de destinație, o eliminăm
+                    if (pieceToRemove != null)
+                    {
+                        board.Controls.Remove(pieceToRemove);
+                    }
+
+                    // Actualizăm starea vizuală a tablei
+                    board.Invalidate();
+                }
+                else
+                {
+                    MessageBox.Show("Nu există piesă de mutat în poziția " + from);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Eroare la actualizarea tablei de șah: " + ex.Message);
+            }
+        }
     }
 }
