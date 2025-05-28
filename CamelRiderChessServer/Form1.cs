@@ -23,6 +23,8 @@ namespace CamelRiderChessServer
             DoubleBuffered = true;
             fullscreen = true;
             this.SizeChanged += new EventHandler(Form1_SizeChanged); // Înregistrare eveniment
+            board.startForm = (Start)Application.OpenForms["Start"];
+            board.isWhitePlayer = false;
 
             // Calculăm dimensiunile ferestrei pentru a se potrivi cu tabla
             int cellSize = 68; // Dimensiunea unei celule (68x68)
@@ -49,57 +51,27 @@ namespace CamelRiderChessServer
         }
         public void UpdateChessBoard(string move)
         {
-            try
-            {
-                // Parsăm mutarea primită
-                string[] parts = move.Split('-');
-                if (parts.Length != 2)
-                {
-                    MessageBox.Show("Mutare invalidă: " + move);
-                    return;
-                }
+            var parts = move.Split('|');
+            if (parts.Length < 3) return;
 
-                // Obținem poziția de plecare și destinație din mutare
-                string from = parts[0];
-                string to = parts[1];
+            var from = parts[1].Split(',');
+            var to = parts[2].Split(',');
 
-                // Convertim pozițiile de la text la coordonate pe tablă
-                int fromX = from[0] - 'A';
-                int fromY = int.Parse(from[1].ToString()) - 1;
-                int toX = to[0] - 'A';
-                int toY = int.Parse(to[1].ToString()) - 1;
+            int fromX = int.Parse(from[0]);
+            int fromY = int.Parse(from[1]);
+            int toX = int.Parse(to[0]);
+            int toY = int.Parse(to[1]);
 
-                // Găsim piesa care trebuie mutată și o mutăm
-                Piece pieceToMove = board.play_board[fromX][fromY];
-                Piece pieceToRemove = board.play_board[toX][toY];
+            // Ex: Simulezi click pe piesa și mutare
+            var piece = board.play_board[fromX][fromY];
+            board.selected = piece;
 
-                // Verificăm dacă mutarea este validă
-                if (pieceToMove != null)
-                {
-                    // Mutăm piesa pe noua poziție
-                    board.play_board[fromX][fromY] = null;
-                    board.play_board[toX][toY] = pieceToMove;
-                    pieceToMove.Location = new Point(toX, toY);
+            var target = board.play_board[toX][toY];
+            target.movable = true;
+            target.takeable = parts.Length >= 4 && parts[3] == "TAKE";
 
-                    // Dacă există o piesă pe poziția de destinație, o eliminăm
-                    if (pieceToRemove != null)
-                    {
-                        board.Controls.Remove(pieceToRemove);
-                    }
+            piece.move();
 
-                    // Actualizăm starea vizuală a tablei
-                    board.Invalidate();
-                }
-                else
-                {
-                    MessageBox.Show("Nu există piesă de mutat în poziția " + from);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Eroare la actualizarea tablei de șah: " + ex.Message);
-            }
         }
-
     }
 }
