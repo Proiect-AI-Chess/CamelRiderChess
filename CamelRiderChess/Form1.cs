@@ -15,7 +15,9 @@ namespace CamelRiderChess
     {
         Board board;
         bool fullscreen;
-        public Form1()
+        public bool gameWithAI;
+        private AiPlayer aiPlayer;
+        public Form1(bool gameWithAI = false)
         {
             InitializeComponent(); // Inițializare formular
             board = new Board();
@@ -25,6 +27,9 @@ namespace CamelRiderChess
             this.SizeChanged += new EventHandler(Form1_SizeChanged); // Înregistrare eveniment
             board.menuForm = (Menu)Application.OpenForms["Menu"]; // sau o referință salvată
             board.isWhitePlayer = true;
+            board.gameWithAI = gameWithAI;
+            board.player_turn = true;   // începe albul
+
             // Calculăm dimensiunile ferestrei pentru a se potrivi cu tabla
             int cellSize = 68; // Dimensiunea unei celule (68x68)
             int boardSize = cellSize * 10; // Tabla este 10x10
@@ -35,9 +40,10 @@ namespace CamelRiderChess
 
             // Inițializăm tabla de șah
             board.resize_play_area(this.Width, this.Height);
+            
+
+
         }
-
-
 
         private void Form1_Load(object sender, EventArgs e)
         {
@@ -74,50 +80,6 @@ namespace CamelRiderChess
 
 
         }
-        //AI
-
-        private AiPlayer ai;
-        private bool againstAI;
-
-        public Form1(bool playWithAI = false)
-        {
-            InitializeComponent();
-
-            board = new Board();
-            this.Controls.Add(board);
-            DoubleBuffered = true;
-
-            fullscreen = true;
-            this.SizeChanged += new EventHandler(Form1_SizeChanged);
-            board.menuForm = (Menu)Application.OpenForms["Menu"];
-
-            againstAI = playWithAI;
-            board.isWhitePlayer = true;  // jucătorul e alb
-            board.player_turn = true;    // începe alb
-
-            if (againstAI)
-            {
-                ai = new AiPlayer(false); // AI e negru
-            }
-
-            int cellSize = 68;
-            int boardSize = cellSize * 10;
-            this.Width = boardSize + 40;
-            this.Height = boardSize + 60;
-
-            board.resize_play_area(this.Width, this.Height);
-
-            // Event după mutare umană
-            board.MoveCompleted += Board_MoveCompleted;  // TREBUIE să declari evenimentul
-        }
-
-        private void Board_MoveCompleted(object sender, EventArgs e)
-        {
-            if (againstAI && board.player_turn == ai.IsWhite)
-            {
-                // E rândul AI
-                ai.MakeMove(board);
-            }
-        }
+        
     }
 }
