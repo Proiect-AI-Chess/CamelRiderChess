@@ -23,7 +23,8 @@ namespace CamelRiderChess
             DoubleBuffered = true;
             fullscreen = true;
             this.SizeChanged += new EventHandler(Form1_SizeChanged); // Înregistrare eveniment
-
+            board.menuForm = (Menu)Application.OpenForms["Menu"]; // sau o referință salvată
+            board.isWhitePlayer = true;
             // Calculăm dimensiunile ferestrei pentru a se potrivi cu tabla
             int cellSize = 68; // Dimensiunea unei celule (68x68)
             int boardSize = cellSize * 10; // Tabla este 10x10
@@ -50,55 +51,72 @@ namespace CamelRiderChess
 
         public void UpdateChessBoard(string move)
         {
-            try
+            var parts = move.Split('|');
+            if (parts.Length < 3) return;
+
+            var from = parts[1].Split(',');
+            var to = parts[2].Split(',');
+
+            int fromX = int.Parse(from[0]);
+            int fromY = int.Parse(from[1]);
+            int toX = int.Parse(to[0]);
+            int toY = int.Parse(to[1]);
+
+            // Ex: Simulezi click pe piesa și mutare
+            var piece = board.play_board[fromX][fromY];
+            board.selected = piece;
+
+            var target = board.play_board[toX][toY];
+            target.movable = true;
+            target.takeable = parts.Length >= 4 && parts[3] == "TAKE";
+
+            piece.move();
+
+
+        }
+        //AI
+
+        private AiPlayer ai;
+        private bool againstAI;
+
+        public Form1(bool playWithAI = false)
+        {
+            InitializeComponent();
+
+            board = new Board();
+            this.Controls.Add(board);
+            DoubleBuffered = true;
+
+            fullscreen = true;
+            this.SizeChanged += new EventHandler(Form1_SizeChanged);
+            board.menuForm = (Menu)Application.OpenForms["Menu"];
+
+            againstAI = playWithAI;
+            board.isWhitePlayer = true;  // jucătorul e alb
+            board.player_turn = true;    // începe alb
+
+            if (againstAI)
             {
-                // Parsăm mutarea primită
-                string[] parts = move.Split('-');
-                if (parts.Length != 2)
-                {
-                    MessageBox.Show("Mutare invalidă: " + move);
-                    return;
-                }
-
-                // Obținem poziția de plecare și destinație din mutare
-                string from = parts[0];
-                string to = parts[1];
-
-                // Convertim pozițiile de la text la coordonate pe tablă
-                int fromX = from[0] - 'A';
-                int fromY = int.Parse(from[1].ToString()) - 1;
-                int toX = to[0] - 'A';
-                int toY = int.Parse(to[1].ToString()) - 1;
-
-                // Găsim piesa care trebuie mutată și o mutăm
-                Piece pieceToMove = board.play_board[fromX][fromY];
-                Piece pieceToRemove = board.play_board[toX][toY];
-
-                // Verificăm dacă mutarea este validă
-                if (pieceToMove != null)
-                {
-                    // Mutăm piesa pe noua poziție
-                    board.play_board[fromX][fromY] = null;
-                    board.play_board[toX][toY] = pieceToMove;
-                    pieceToMove.Location = new Point(toX, toY);
-
-                    // Dacă există o piesă pe poziția de destinație, o eliminăm
-                    if (pieceToRemove != null)
-                    {
-                        board.Controls.Remove(pieceToRemove);
-                    }
-
-                    // Actualizăm starea vizuală a tablei
-                    board.Invalidate();
-                }
-                else
-                {
-                    MessageBox.Show("Nu există piesă de mutat în poziția " + from);
-                }
+                ai = new AiPlayer(false); // AI e negru
             }
-            catch (Exception ex)
+
+            int cellSize = 68;
+            int boardSize = cellSize * 10;
+            this.Width = boardSize + 40;
+            this.Height = boardSize + 60;
+
+            board.resize_play_area(this.Width, this.Height);
+
+            // Event după mutare umană
+            board.MoveCompleted += Board_MoveCompleted;  // TREBUIE să declari evenimentul
+        }
+
+        private void Board_MoveCompleted(object sender, EventArgs e)
+        {
+            if (againstAI && board.player_turn == ai.IsWhite)
             {
-                MessageBox.Show("Eroare la actualizarea tablei de șah: " + ex.Message);
+                // E rândul AI
+                ai.MakeMove(board);
             }
         }
     }

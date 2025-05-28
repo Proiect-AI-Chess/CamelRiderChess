@@ -18,12 +18,14 @@ namespace CamelRiderChess
         public Menu()
         {
             InitializeComponent();
+            
         }
 
         private void RobotButton_Click(object sender, EventArgs e)
         {
             this.Hide();
-            // TODO: joc împotriva robotului
+            var gameForm = new Form1(true);  // constructor cu AI mode
+            gameForm.ShowDialog();
             this.Close();
         }
 
@@ -144,7 +146,7 @@ namespace CamelRiderChess
                     using (StreamWriter writer = new StreamWriter(clientStream, Encoding.UTF8, 1024, leaveOpen: true) { AutoFlush = true })
 
                     {
-                        writer.WriteLine("MOVE " + move);
+                        writer.WriteLine(move);
                     }
                 }
                 catch (Exception ex)

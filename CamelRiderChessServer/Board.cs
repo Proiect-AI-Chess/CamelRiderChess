@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
@@ -18,6 +19,9 @@ namespace CamelRiderChessServer
         public Piece selected;
         public List<Piece> discarded;
         public bool player_turn;
+        public Start startForm;
+        public bool isWhitePlayer;
+
         public Board()
         {
             player_turn = true;
@@ -128,12 +132,17 @@ namespace CamelRiderChessServer
                     {
                         Piece piece1 = (Piece)sender;
 
-                        if (!piece1.movable && !piece1.takeable && piece1.white == player_turn)
+
+
+                        if (player_turn == isWhitePlayer)
+                            return;
+
+                        if (!piece1.movable && !piece1.takeable)
                         {
                             if (!piece1.whitespace)
                                 reset_play_board();
-                            piece.find_possible_moves();
-                            piece.find_possible_victims();                        
+                            piece1.find_possible_moves();
+                            piece1.find_possible_victims();
                         }
 
                         Piece temp_piece = piece1.move();
@@ -142,9 +151,9 @@ namespace CamelRiderChessServer
                             redraw_play_area(temp_piece);
                         }
 
-                        if (piece1.white == player_turn)
-                            selected = piece;
+                        selected = piece1;
                     });
+
                 }
             }
         }
@@ -240,5 +249,18 @@ namespace CamelRiderChessServer
             }
             return false;
         }
+        public void SendMoveToClient(string move)
+        {
+            try
+            {
+                startForm.SendMove(move);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Eroare trimitere mutare: " + ex.Message);
+            }
+        }
+
+
     }
 }

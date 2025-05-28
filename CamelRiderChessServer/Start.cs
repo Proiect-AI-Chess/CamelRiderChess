@@ -130,5 +130,6 @@ namespace CamelRiderChessServer
                 MessageBox.Show("Eroare la procesarea mutării primite de la server: " + ex.Message);
             }
         }
+
     }
 }
