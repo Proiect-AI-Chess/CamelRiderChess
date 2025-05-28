@@ -16,12 +16,14 @@ namespace CamelRiderChess
     {
         public String[][] board_game;
         public Piece[][] play_board;
-        public Piece selected;
+        public Piece selected = null;
         public List<Piece> discarded;
-        public bool player_turn;
         public Menu menuForm;
-        public bool isWhitePlayer;
-        public bool vsAI = false; // setezi true când începe jocul vs AI
+        public bool player_turn = true;   
+        public bool isWhitePlayer = true; 
+        public bool gameWithAI;
+        public AiPlayer aiPlayer;
+
 
         public Board()
         {
@@ -133,9 +135,8 @@ namespace CamelRiderChess
                     {
                         Piece piece1 = (Piece)sender;
 
-
-
-                        if (player_turn != isWhitePlayer)
+                        // Verificăm dacă e rândul jucătorului și dacă piesa selectată este a lui (albă)
+                        if (player_turn != isWhitePlayer )
                             return;
 
                         if (!piece1.movable && !piece1.takeable)
@@ -150,10 +151,19 @@ namespace CamelRiderChess
                         if (temp_piece != null)
                         {
                             redraw_play_area(temp_piece);
+                            player_turn = !player_turn;
+
+                            if (gameWithAI && !player_turn)
+                            {
+                                // AI mută imediat după jucător
+                                aiPlayer.MakeMove();
+                                player_turn = !player_turn;
+                            }
                         }
 
                         selected = piece1;
                     });
+
 
                 }
             }
@@ -261,50 +271,7 @@ namespace CamelRiderChess
                 MessageBox.Show("Eroare trimitere mutare: " + ex.Message);
             }
         }
-        public void MakeAIMove()
-        {
-            // Găsim toate piesele AI-ului
-            List<Piece> aiPieces = new List<Piece>();
-
-            foreach (var row in play_board)
-            {
-                foreach (var piece in row)
-                {
-                    if (!piece.whitespace && piece.white != player_turn)
-                        aiPieces.Add(piece);
-                }
-            }
-
-            // Căutăm mutări valide pentru fiecare piesă
-            foreach (var piece in aiPieces.OrderBy(p => Guid.NewGuid())) // randomize
-            {
-                var moves = piece.GetValidMoves(); // trebuie să implementezi această metodă în clasă Piece
-
-                foreach (var move in moves.OrderBy(m => Guid.NewGuid()))
-                {
-                    int targetX = move.Item1;
-                    int targetY = move.Item2;
-                    bool isCapture = !play_board[targetX][targetY].whitespace;
-
-                    // Mutare AI validă
-                    piece.MoveTo(targetX, targetY, isCapture, isAI: true);
-
-                    player_turn = !player_turn;
-                    reset_play_board();
-
-                    return; // am făcut mutarea
-                }
-            }
-
-            // Dacă nu are mutări valide:
-            MessageBox.Show("AI nu mai are mutări!");
-        }
-        public event EventHandler MoveCompleted;
-
-        public void OnMoveCompleted()
-        {
-            MoveCompleted?.Invoke(this, EventArgs.Empty);
-        }
+       
 
     }
 }

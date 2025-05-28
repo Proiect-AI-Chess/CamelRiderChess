@@ -216,75 +216,7 @@ namespace CamelRiderChess
             return false;
         }
 
-        public Piece MoveTo(int targetX, int targetY, bool isCapture, bool isAI)
-        {
-            // Verifică dacă mutarea pune regele în șah (valabil doar pentru oameni, AI poate simula oricum)
-            if (!isAI && board.WouldBeInCheckAfterMove(this, targetX, targetY))
-                return null;
-
-            int fromX = x;
-            int fromY = y;
-
-            Piece targetPiece = board.play_board[targetX][targetY];
-
-            // Mutăm piesa pe tabla internă
-            board.play_board[fromX][fromY] = new Piece(board, fromX, fromY); // piesă goală
-            board.play_board[targetX][targetY] = this;
-
-            // Actualizăm poziția internă a piesei
-            x = targetX;
-            y = targetY;
-
-            // Actualizăm controalele UI
-            board.Controls.Remove(board.play_board[fromX][fromY]);
-            board.Controls.Add(board.play_board[fromX][fromY], fromX, fromY);
-
-            if (isCapture && !targetPiece.whitespace)
-            {
-                board.Controls.Remove(targetPiece);
-                board.discarded.Add(targetPiece);
-            }
-
-            board.Controls.Remove(this);
-            board.Controls.Add(this, targetX, targetY);
-
-            // Dacă mutarea a fost făcută de jucător, schimbăm rândul și trimitem mutarea
-            if (!isAI)
-            {
-                board.player_turn = !board.player_turn;
-
-                string moveString = $"MOVE|{fromX},{fromY}|{targetX},{targetY}|{(isCapture ? "TAKE" : "MOVE")}";
-                board.SendMoveToServer(moveString);
-
-                board.OnMoveCompleted();
-            }
-
-            return isCapture ? targetPiece : null;
-        }
-        public List<(int, int)> GetValidMoves()
-        {
-            List<(int, int)> moves = new List<(int, int)>();
-
-            // exemplu simplu: adaugă toți vecinii
-            for (int dx = -1; dx <= 1; dx++)
-            {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    int newX = x + dx;
-                    int newY = y + dy;
-
-                    if ((dx != 0 || dy != 0))
-                    {
-                        Piece target = board.play_board[newX][newY];
-                        if (target.whitespace || target.white != white)
-                            moves.Add((newX, newY));
-                    }
-                }
-            }
-
-            return moves;
-        }
-
+        
 
     }
 }
