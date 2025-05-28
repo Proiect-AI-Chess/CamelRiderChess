@@ -151,15 +151,9 @@ namespace CamelRiderChess
                         if (temp_piece != null)
                         {
                             redraw_play_area(temp_piece);
-                            player_turn = !player_turn;
-
-                            if (gameWithAI && !player_turn)
-                            {
-                                // AI mută imediat după jucător
-                                aiPlayer.MakeMove();
-                                player_turn = !player_turn;
-                            }
+                            ToggleTurnAndRunAI();         // noul apel
                         }
+
 
                         selected = piece1;
                     });
@@ -167,6 +161,17 @@ namespace CamelRiderChess
 
                 }
             }
+        }
+        private void ToggleTurnAndRunAI()
+        {
+
+            if (gameWithAI && !player_turn)  // acum e rândul negrului (AI)
+            {
+                aiPlayer.MakeMove();         // AI mută
+                player_turn = !player_turn;  // după mutarea AI-ului revine la alb
+            }
+            player_turn = !player_turn;      // inversăm tura
+
         }
         public void reset_play_board()
         {
@@ -200,7 +205,8 @@ namespace CamelRiderChess
                         return king;
                 }
             }
-            return null; // Ar trebui să nu se întâmple niciodată dacă regele există pe tablă
+            throw new Exception("King not found on board for color: " + (white ? "White" : "Black"));
+
         }
 
 

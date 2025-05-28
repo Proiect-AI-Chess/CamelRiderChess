@@ -26,9 +26,13 @@ namespace CamelRiderChess
             fullscreen = true;
             this.SizeChanged += new EventHandler(Form1_SizeChanged); // Înregistrare eveniment
             board.menuForm = (Menu)Application.OpenForms["Menu"]; // sau o referință salvată
-            board.isWhitePlayer = true;
             board.gameWithAI = gameWithAI;
             board.player_turn = true;   // începe albul
+            board.isWhitePlayer = true;
+            if (gameWithAI)                   
+            {
+                board.aiPlayer = new AiPlayer(board);  
+            }
 
             // Calculăm dimensiunile ferestrei pentru a se potrivi cu tabla
             int cellSize = 68; // Dimensiunea unei celule (68x68)
