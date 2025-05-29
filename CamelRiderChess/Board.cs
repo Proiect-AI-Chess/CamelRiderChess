@@ -94,27 +94,54 @@ namespace CamelRiderChess
                     {
                         Piece clickedPiece = (Piece)sender;
 
+                        // Dacă nu e rândul jucătorului, ignoră
                         if (player_turn != isWhitePlayer)
-                            return; // Nu e rândul jucătorului
+                            return;
 
-                        if (!clickedPiece.movable && !clickedPiece.takeable)
+                        if (selected == null)
                         {
-                            if (!clickedPiece.whitespace)
+                            // Nu ai selectat nimic, poți selecta doar piesele tale
+                            if (!clickedPiece.whitespace && clickedPiece.white == isWhitePlayer)
+                            {
                                 reset_play_board();
-
-                            clickedPiece.find_possible_moves();
-                            clickedPiece.find_possible_victims();
+                                clickedPiece.find_possible_moves();
+                                clickedPiece.find_possible_victims();
+                                selected = clickedPiece;
+                            }
+                            else
+                            {
+                                // Nimic de făcut, pentru că nu poți selecta piesa adversă sau o casetă goală
+                                return;
+                            }
                         }
-
-                        Piece result = clickedPiece.move();
-
-                        if (result != null)
+                        else
                         {
-                            redraw_play_area(result);
-                            ToggleTurnAndRunAI();  // AI-ul mută dacă e cazul
+                            // Ai o piesă selectată, încerci să muți sau să capturezi
+                            Piece result = clickedPiece.move();
+                            if (result != null)
+                            {
+                                redraw_play_area(result);
+                                ToggleTurnAndRunAI();
+                                selected = null; // după mutare, deselectăm
+                            }
+                            else
+                            {
+                                // Dacă nu s-a putut muta pe piesa apăsată (poate e o piesă proprie diferită)
+                                if (!clickedPiece.whitespace && clickedPiece.white == isWhitePlayer)
+                                {
+                                    reset_play_board();
+                                    clickedPiece.find_possible_moves();
+                                    clickedPiece.find_possible_victims();
+                                    selected = clickedPiece;
+                                }
+                                else
+                                {
+                                    // Deselectăm dacă apăsăm în altă parte
+                                    reset_play_board();
+                                    selected = null;
+                                }
+                            }
                         }
-
-                        selected = clickedPiece;
                     });
                 }
             }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 public class AiPlayer
 {
     private Board board;
-    private const int MAX_DEPTH = 3;
+    private const int MAX_DEPTH = 1 ;
 
     public AiPlayer(Board board)
     {
