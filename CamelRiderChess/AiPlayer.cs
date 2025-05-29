@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class AiPlayer
 {
     private Board board;
+    private const int MAX_DEPTH = 3;
 
     public AiPlayer(Board board)
     {
@@ -13,79 +14,76 @@ public class AiPlayer
 
     public void MakeMove()
     {
-        int bestFromX = -1, bestFromY = -1, bestToX = -1, bestToY = -1;
-        int maxEval = int.MinValue;
-        int depth = 3;
-
-        foreach (var move in GenerateAllMoves(false)) // false = negru
+        SimpleMove bestMove = FindBestMove();
+        if (bestMove.fromX != -1)
         {
-            // Backup tabla
-            var backupFrom = board.play_board[move.fromX][move.fromY];
-            var backupTo = board.play_board[move.toX][move.toY];
+            // Select the piece
+            Piece pieceToMove = board.play_board[bestMove.fromX][bestMove.fromY];
+            board.selected = pieceToMove;
 
-            var captured = SimulateMove(move.fromX, move.fromY, move.toX, move.toY);
+            // Find and apply possible moves
+            pieceToMove.find_possible_moves();
+            pieceToMove.find_possible_victims();
 
-            int eval = Minimax(depth - 1, true, int.MinValue, int.MaxValue);
+            // Move to target position
+            Piece targetPiece = board.play_board[bestMove.toX][bestMove.toY];
+            Piece result = targetPiece.move();
 
-            // Revenim la starea anterioară
-            UndoMove(move.fromX, move.fromY, move.toX, move.toY, backupFrom, backupTo);
-
-            if (eval > maxEval)
+            if (result != null)
             {
-                maxEval = eval;
-                bestFromX = move.fromX;
-                bestFromY = move.fromY;
-                bestToX = move.toX;
-                bestToY = move.toY;
+                board.redraw_play_area(result);
             }
-        }
-
-        if (bestFromX != -1)
-        {
-            ApplyMove(bestFromX, bestFromY, bestToX, bestToY);
-
-            // Construim piesa goală pentru poziția veche (de unde a plecat AI-ul)
-            Piece empty = new Piece(board, bestFromX, bestFromY);
-            Piece moved = board.play_board[bestToX][bestToY];
-
-            // Eliminăm din UI piesele vechi
-            board.Controls.Remove(moved);
-            board.Controls.Remove(empty);
-
-            // Le adăugăm la noile coordonate
-            board.Controls.Add(empty, bestFromX, bestFromY);
-            board.Controls.Add(moved, bestToX, bestToY);
-
-            board.reset_play_board(); // refacem tabla logică
         }
     }
 
-    private int Minimax(int depth, bool isMaximizing, int alpha, int beta)
+    private SimpleMove FindBestMove()
+    {
+        int bestValue = int.MinValue;
+        SimpleMove bestMove = new SimpleMove(-1, -1, -1, -1);
+
+        List<SimpleMove> possibleMoves = GenerateAllMoves();
+
+        foreach (var move in possibleMoves)
+        {
+            // Save current state
+            Piece capturedPiece = SimulateMove(move);
+
+            // Evaluate move
+            int moveValue = Minimax(MAX_DEPTH - 1, false, int.MinValue, int.MaxValue);
+
+            // Restore board state
+            UndoMove(move, capturedPiece);
+
+            if (moveValue > bestValue)
+            {
+                bestValue = moveValue;
+                bestMove = move;
+            }
+        }
+
+        return bestMove;
+    }
+
+    private int Minimax(int depth, bool maximizingPlayer, int alpha, int beta)
     {
         if (depth == 0)
             return EvaluateBoard();
 
-        var moves = GenerateAllMoves(isMaximizing);
+        List<SimpleMove> moves = GenerateAllMoves();
 
-        if (moves.Count == 0)
-            return isMaximizing ? int.MinValue : int.MaxValue;
-
-        if (isMaximizing)
+        if (maximizingPlayer)
         {
             int maxEval = int.MinValue;
             foreach (var move in moves)
             {
-                var backupFrom = board.play_board[move.fromX][move.fromY];
-                var backupTo = board.play_board[move.toX][move.toY];
-
-                SimulateMove(move.fromX, move.fromY, move.toX, move.toY);
-
+                Piece captured = SimulateMove(move);
                 int eval = Minimax(depth - 1, false, alpha, beta);
-                UndoMove(move.fromX, move.fromY, move.toX, move.toY, backupFrom, backupTo);
+                UndoMove(move, captured);
 
                 maxEval = Math.Max(maxEval, eval);
                 alpha = Math.Max(alpha, eval);
-                if (beta <= alpha) break;
+                if (beta <= alpha)
+                    break;
             }
             return maxEval;
         }
@@ -94,44 +92,17 @@ public class AiPlayer
             int minEval = int.MaxValue;
             foreach (var move in moves)
             {
-                var backupFrom = board.play_board[move.fromX][move.fromY];
-                var backupTo = board.play_board[move.toX][move.toY];
-
-                SimulateMove(move.fromX, move.fromY, move.toX, move.toY);
-
+                Piece captured = SimulateMove(move);
                 int eval = Minimax(depth - 1, true, alpha, beta);
-                UndoMove(move.fromX, move.fromY, move.toX, move.toY, backupFrom, backupTo);
+                UndoMove(move, captured);
 
                 minEval = Math.Min(minEval, eval);
                 beta = Math.Min(beta, eval);
-                if (beta <= alpha) break;
+                if (beta <= alpha)
+                    break;
             }
             return minEval;
         }
-    }
-
-    private int EvaluateBoard()
-    {
-        int score = 0;
-        foreach (var row in board.play_board)
-        {
-            foreach (var piece in row)
-            {
-                if (piece.whitespace) continue;
-
-                int value = 0;
-                if (piece is Pawn) value = 10;
-                else if (piece is Knight) value = 30;
-                else if (piece is Bishop) value = 30;
-                else if (piece is Rook) value = 50;
-                else if (piece is Queen) value = 90;
-                else if (piece is King) value = 1000;
-                else if (piece is Camel) value = 40;
-
-                score += piece.white ? -value : value;
-            }
-        }
-        return score;
     }
 
     private struct SimpleMove
@@ -146,273 +117,101 @@ public class AiPlayer
         }
     }
 
-    private List<SimpleMove> GenerateAllMoves(bool forWhite)
+    private List<SimpleMove> GenerateAllMoves()
     {
-        var moves = new List<SimpleMove>();
+        List<SimpleMove> moves = new List<SimpleMove>();
 
-        foreach (var row in board.play_board)
+        // Generate moves for all black pieces
+        for (int i = 0; i < 10; i++)
         {
-            foreach (var piece in row)
+            for (int j = 0; j < 10; j++)
             {
-                if (!piece.whitespace && piece.white == forWhite)
+                Piece piece = board.play_board[i][j];
+                if (!piece.whitespace && !piece.white) // Black pieces
                 {
                     piece.find_possible_moves();
                     piece.find_possible_victims();
 
+                    // Check all possible positions
                     for (int x = 0; x < 10; x++)
                     {
                         for (int y = 0; y < 10; y++)
                         {
-                            if (board.play_board[x][y].movable || board.play_board[x][y].takeable)
+                            if ((board.play_board[x][y].movable || board.play_board[x][y].takeable) &&
+                                !board.WouldBeInCheckAfterMove(piece, x, y))
                             {
-                                moves.Add(new SimpleMove(piece.x, piece.y, x, y));
+                                moves.Add(new SimpleMove(i, j, x, y));
                             }
                         }
                     }
+
+                    board.reset_play_board();
                 }
             }
         }
         return moves;
     }
 
-    private void ApplyMove(int fromX, int fromY, int toX, int toY)
+    private Piece SimulateMove(SimpleMove move)
     {
-        Piece fromPiece = board.play_board[fromX][fromY];
-        Piece toPiece = board.play_board[toX][toY];
+        Piece movingPiece = board.play_board[move.fromX][move.fromY];
+        Piece capturedPiece = board.play_board[move.toX][move.toY];
 
-        if (!toPiece.whitespace)
-        {
-            board.discarded.Add(toPiece);
-        }
+        // Store the piece at destination
+        board.play_board[move.toX][move.toY] = movingPiece;
+        board.play_board[move.fromX][move.fromY] = new Piece(board, move.fromX, move.fromY);
 
-        board.play_board[toX][toY] = fromPiece;
-        board.play_board[fromX][fromY] = new Piece(board, fromX, fromY);
+        // Update piece coordinates
+        movingPiece.x = move.toX;
+        movingPiece.y = move.toY;
 
-        fromPiece.x = toX;
-        fromPiece.y = toY;
-        fromPiece.no_moves++;
-
-        board.reset_play_board();
-        board.player_turn = !board.player_turn;
+        return capturedPiece;
     }
 
-    private Piece SimulateMove(int fromX, int fromY, int toX, int toY)
+    private void UndoMove(SimpleMove move, Piece capturedPiece)
     {
-        Piece movingPiece = board.play_board[fromX][fromY];
-        Piece captured = board.play_board[toX][toY];
+        Piece movingPiece = board.play_board[move.toX][move.toY];
 
-        board.play_board[toX][toY] = movingPiece;
-        board.play_board[fromX][fromY] = new Piece(board, fromX, fromY);
+        // Restore original position
+        board.play_board[move.fromX][move.fromY] = movingPiece;
+        board.play_board[move.toX][move.toY] = capturedPiece;
 
-        movingPiece.x = toX;
-        movingPiece.y = toY;
-        return captured;
+        // Restore piece coordinates
+        movingPiece.x = move.fromX;
+        movingPiece.y = move.fromY;
     }
 
-    private void UndoMove(int fromX, int fromY, int toX, int toY, Piece originalFrom, Piece originalTo)
+    private int EvaluateBoard()
     {
-        board.play_board[fromX][fromY] = originalFrom;
-        board.play_board[toX][toY] = originalTo;
+        int score = 0;
 
-        if (!originalFrom.whitespace)
+        for (int i = 0; i < 10; i++)
         {
-            originalFrom.x = fromX;
-            originalFrom.y = fromY;
+            for (int j = 0; j < 10; j++)
+            {
+                Piece piece = board.play_board[i][j];
+                if (!piece.whitespace)
+                {
+                    int pieceValue = GetPieceValue(piece);
+                    if (!piece.white) // Black pieces (AI)
+                        score += pieceValue;
+                    else // White pieces (opponent)
+                        score -= pieceValue;
+                }
+            }
         }
-        if (!originalTo.whitespace)
-        {
-            originalTo.x = toX;
-            originalTo.y = toY;
-        }
+        return score;
+    }
+
+    private int GetPieceValue(Piece piece)
+    {
+        if (piece is Pawn) return 10;
+        if (piece is Knight) return 30;
+        if (piece is Bishop) return 30;
+        if (piece is Rook) return 50;
+        if (piece is Queen) return 90;
+        if (piece is King) return 900;
+        if (piece is Camel) return 40;
+        return 0;
     }
 }
-
-    //private Board board;
-    //private int maxDepth = 3; // Poți ajusta pentru dificultate
-
-    //public AiPlayer(Board board)
-    //{
-    //    this.board = board;
-    //}
-
-    //public void MakeMove()
-    //{
-    //    var bestMove = GetBestMove();
-    //    if (bestMove != null)
-    //    {
-    //        // Simulăm mutarea pe interfață
-    //        var piece = board.play_board[bestMove.FromX][bestMove.FromY];
-    //        var target = board.play_board[bestMove.ToX][bestMove.ToY];
-
-    //        board.selected = piece;
-    //        target.movable = true;
-    //        target.takeable = bestMove.IsCapture;
-
-    //        piece.move();
-    //    }
-    //}
-
-    //private Move GetBestMove()
-    //{
-    //    List<Move> possibleMoves = GenerateAllMoves(false); // AI e negru
-    //    Move bestMove = null;
-    //    int bestScore = int.MaxValue;
-
-    //    foreach (var move in possibleMoves)
-    //    {
-    //        var state = SimulateMove(move);
-    //        int score = Minimax(maxDepth - 1, true, int.MinValue, int.MaxValue);
-    //        if (score < bestScore)
-    //        {
-    //            bestScore = score;
-    //            bestMove = move;
-    //        }
-    //    }
-
-    //    return bestMove;
-    //}
-
-    //private int Minimax(int depth, bool isMaximizing, int alpha, int beta)
-    //{
-    //    if (depth == 0 || IsGameOver())
-    //    {
-    //        return EvaluateBoard();
-    //    }
-
-    //    List<Move> moves = GenerateAllMoves(isMaximizing);
-
-    //    if (isMaximizing)
-    //    {
-    //        int maxEval = int.MinValue;
-    //        foreach (var move in moves)
-    //        {
-    //            var state = SimulateMove(move);
-    //            int eval = Minimax(depth - 1, false, alpha, beta);
-    //            maxEval = Math.Max(maxEval, eval);
-    //            alpha = Math.Max(alpha, eval);
-    //            if (beta <= alpha) break;
-    //        }
-    //        return maxEval;
-    //    }
-    //    else
-    //    {
-    //        int minEval = int.MaxValue;
-    //        foreach (var move in moves)
-    //        {
-    //            var state = SimulateMove(move);
-    //            int eval = Minimax(depth - 1, true, alpha, beta);
-    //            minEval = Math.Min(minEval, eval);
-    //            beta = Math.Min(beta, eval);
-    //            if (beta <= alpha) break;
-    //        }
-    //        return minEval;
-    //    }
-    //}
-
-    //private List<Move> GenerateAllMoves(bool forWhite)
-    //{
-    //    List<Move> moves = new List<Move>();
-
-    //    foreach (var row in board.play_board)
-    //    {
-    //        foreach (var piece in row)
-    //        {
-    //            if (piece.whitespace || piece.white != forWhite)
-    //                continue;
-
-    //            piece.find_possible_moves();
-    //            piece.find_possible_victims();
-
-    //            for (int i = 0; i < 10; i++)
-    //            {
-    //                for (int j = 0; j < 10; j++)
-    //                {
-    //                    if (board.play_board[i][j].movable || board.play_board[i][j].takeable)
-    //                    {
-    //                        if (!board.WouldBeInCheckAfterMove(piece, i, j))
-    //                        {
-    //                            moves.Add(new Move
-    //                            {
-    //                                FromX = piece.x,
-    //                                FromY = piece.y,
-    //                                ToX = i,
-    //                                ToY = j,
-    //                                IsCapture = board.play_board[i][j].takeable
-    //                            });
-    //                        }
-    //                    }
-    //                }
-    //            }
-
-    //            board.reset_play_board(); // resetăm starea
-    //        }
-    //    }
-
-    //    return moves;
-    //}
-
-    //private (Piece[][] state, Piece capturedPiece) SimulateMove(Move move)
-    //{
-    //    var piece = board.play_board[move.FromX][move.FromY];
-    //    var target = board.play_board[move.ToX][move.ToY];
-
-    //    Piece captured = target.whitespace ? null : target;
-    //    board.play_board[move.ToX][move.ToY] = piece;
-    //    board.play_board[move.FromX][move.FromY] = new Piece(board, move.FromX, move.FromY);
-    //    piece.x = move.ToX;
-    //    piece.y = move.ToY;
-
-    //    return (board.play_board, captured);
-    //}
-
-
-
-    //private bool IsGameOver()
-    //{
-    //    return !board.HasAnyValidMove(true) || !board.HasAnyValidMove(false);
-    //}
-
-    //private int EvaluateBoard()
-    //{
-    //    int score = 0;
-
-    //    foreach (var row in board.play_board)
-    //    {
-    //        foreach (var piece in row)
-    //        {
-    //            if (piece.whitespace) continue;
-
-    //            int value = GetPieceValue(piece);
-
-    //            if (piece.white)
-    //                score += value;
-    //            else
-    //                score -= value;
-    //        }
-    //    }
-
-    //    return score;
-    //}
-
-    //private int GetPieceValue(Piece piece)
-    //{
-    //    if (piece is King) return 10000;
-    //    if (piece is Queen) return 900;
-    //    if (piece is Rook) return 500;
-    //    if (piece is Bishop) return 300;
-    //    if (piece is Knight) return 300;
-    //    if (piece is Camel) return 250;
-    //    if (piece is Pawn) return 100;
-    //    return 0;
-    //}
-
-    //private class Move
-    //{
-    //    public int FromX, FromY, ToX, ToY;
-    //    public bool IsCapture;
-    //}
-//}
-
-
-
-
