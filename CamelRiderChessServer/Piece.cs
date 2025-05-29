@@ -130,7 +130,6 @@ namespace CamelRiderChessServer
                 board.discarded.Add(this);
                 board.reset_play_board();
                 board.player_turn = !board.player_turn;
-                MessageBox.Show("Acum e rândul " + (board.player_turn ? "albului" : "negrului"));
 
                 moveString = $"MOVE|{fromX},{fromY}|{toX},{toY}|TAKE";
                 board.SendMoveToClient(moveString);
@@ -175,7 +174,6 @@ namespace CamelRiderChessServer
 
                 board.reset_play_board();
                 board.player_turn = !board.player_turn;
-                MessageBox.Show("Acum e rândul " + (board.player_turn ? "albului" : "negrului"));
 
                 moveString = $"MOVE|{fromX},{fromY}|{toX},{toY}|MOVE";
                 board.SendMoveToClient(moveString);
