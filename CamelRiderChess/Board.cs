@@ -1,14 +1,8 @@
 ﻿using CamelRiderChess;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-
 
 namespace CamelRiderChess
 {
@@ -19,28 +13,25 @@ namespace CamelRiderChess
         public Piece selected = null;
         public List<Piece> discarded;
         public Menu menuForm;
-        public bool player_turn = true;   
-        public bool isWhitePlayer = true; 
+        public bool player_turn = true;
+        public bool isWhitePlayer = true;
         public bool gameWithAI;
         public AiPlayer aiPlayer;
 
+        private bool isAiMoving = false;  // protecție împotriva recursiunii AI
 
         public Board()
         {
             player_turn = true;
             discarded = new List<Piece>();
 
-
             for (int i = 0; i < 10; i++)
             {
-
                 this.RowStyles.Add(new RowStyle(SizeType.Percent, 10));
                 this.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 10));
             }
 
-
             this.AutoSize = true;
-
             board_game = new String[10][];
             play_board = new Piece[10][];
             for (int i = 0; i < 10; i++)
@@ -53,21 +44,18 @@ namespace CamelRiderChess
 
         public void resize_play_area(int formWidth, int formHeight)
         {
-            int cellSize = 68; // Dimensiunea unei celule (68x68)
-            int boardSize = cellSize * 10; // Tabla este 10x10
+            int cellSize = 68;
+            int boardSize = cellSize * 10;
 
-            // Ajustăm dimensiunea tablei la dimensiunea ferestrei
             this.Width = boardSize;
             this.Height = boardSize;
 
-            // Ajustăm fiecare celulă la dimensiunea de 68x68
             foreach (Control control in this.Controls)
             {
                 control.Width = cellSize;
                 control.Height = cellSize;
             }
 
-            // Centrează tabla în fereastră
             this.Top = (formHeight - this.Height) / 2;
             this.Left = (formWidth - this.Width) / 2;
         }
@@ -82,97 +70,70 @@ namespace CamelRiderChess
                     Piece piece;
                     switch (board_game[i][j])
                     {
-                        case "pawnWhite":
-                            piece = new Pawn(this, j, i, true);
-                            break;
-                        case "pawnBlack":
-                            piece = new Pawn(this, j, i, false);
-                            break;
-                        case "rookWhite":
-                            piece = new Rook(this, j, i, true);
-                            break;
-                        case "rookBlack":
-                            piece = new Rook(this, j, i, false);
-                            break;
-                        case "knightWhite":
-                            piece = new Knight(this, j, i, true);
-                            break;
-                        case "knightBlack":
-                            piece = new Knight(this, j, i, false);
-                            break;
-                        case "bishopWhite":
-                            piece = new Bishop(this, j, i, true);
-                            break;
-                        case "bishopBlack":
-                            piece = new Bishop(this, j, i, false);
-                            break;
-                        case "queenWhite":
-                            piece = new Queen(this, j, i, true);
-                            break;
-                        case "queenBlack":
-                            piece = new Queen(this, j, i, false);
-                            break;
-                        case "kingWhite":
-                            piece = new King(this, j, i, true);
-                            break;
-                        case "kingBlack":
-                            piece = new King(this, j, i, false);
-                            break;
-                        case "camelWhite":
-                            piece = new Camel(this, j, i, true);
-                            break;
-                        case "camelBlack":
-                            piece = new Camel(this, j, i, false);
-                            break;
-                        default:
-                            piece = new Piece(this, j, i);
-                            break;
+                        case "pawnWhite": piece = new Pawn(this, j, i, true); break;
+                        case "pawnBlack": piece = new Pawn(this, j, i, false); break;
+                        case "rookWhite": piece = new Rook(this, j, i, true); break;
+                        case "rookBlack": piece = new Rook(this, j, i, false); break;
+                        case "knightWhite": piece = new Knight(this, j, i, true); break;
+                        case "knightBlack": piece = new Knight(this, j, i, false); break;
+                        case "bishopWhite": piece = new Bishop(this, j, i, true); break;
+                        case "bishopBlack": piece = new Bishop(this, j, i, false); break;
+                        case "queenWhite": piece = new Queen(this, j, i, true); break;
+                        case "queenBlack": piece = new Queen(this, j, i, false); break;
+                        case "kingWhite": piece = new King(this, j, i, true); break;
+                        case "kingBlack": piece = new King(this, j, i, false); break;
+                        case "camelWhite": piece = new Camel(this, j, i, true); break;
+                        case "camelBlack": piece = new Camel(this, j, i, false); break;
+                        default: piece = new Piece(this, j, i); break;
                     }
+
                     play_board[j][i] = piece;
                     this.Controls.Add(piece, j, i);
 
                     piece.Click += new EventHandler((sender, e) =>
                     {
-                        Piece piece1 = (Piece)sender;
+                        Piece clickedPiece = (Piece)sender;
 
-                        // Verificăm dacă e rândul jucătorului și dacă piesa selectată este a lui (albă)
-                        if (player_turn != isWhitePlayer )
-                            return;
+                        if (player_turn != isWhitePlayer)
+                            return; // Nu e rândul jucătorului
 
-                        if (!piece1.movable && !piece1.takeable)
+                        if (!clickedPiece.movable && !clickedPiece.takeable)
                         {
-                            if (!piece1.whitespace)
+                            if (!clickedPiece.whitespace)
                                 reset_play_board();
-                            piece1.find_possible_moves();
-                            piece1.find_possible_victims();
+
+                            clickedPiece.find_possible_moves();
+                            clickedPiece.find_possible_victims();
                         }
 
-                        Piece temp_piece = piece1.move();
-                        if (temp_piece != null)
+                        Piece result = clickedPiece.move();
+
+                        if (result != null)
                         {
-                            redraw_play_area(temp_piece);
-                            ToggleTurnAndRunAI();         // noul apel
+                            redraw_play_area(result);
+                            ToggleTurnAndRunAI();  // AI-ul mută dacă e cazul
                         }
 
-
-                        selected = piece1;
+                        selected = clickedPiece;
                     });
-
-
                 }
             }
         }
+
         private void ToggleTurnAndRunAI()
         {
+            player_turn = !player_turn; // Schimbă rândul jucătorului
 
-            if (gameWithAI && !player_turn)  // acum e rândul negrului (AI)
+            if (gameWithAI && player_turn && !isAiMoving)
             {
-                aiPlayer.MakeMove();         // AI mută
-                player_turn = !player_turn;  // după mutarea AI-ului revine la alb
-            }
-            player_turn = !player_turn;      // inversăm tura
+                isAiMoving = true;
+                aiPlayer.MakeMove();
+                player_turn = !player_turn;
 
+                isAiMoving = false;
+            }
         }
+
         public void reset_play_board()
         {
             for (int i = 0; i < 10; i++)
@@ -206,9 +167,7 @@ namespace CamelRiderChess
                 }
             }
             throw new Exception("King not found on board for color: " + (white ? "White" : "Black"));
-
         }
-
 
         public bool WouldBeInCheckAfterMove(Piece movingPiece, int targetX, int targetY)
         {
@@ -217,20 +176,17 @@ namespace CamelRiderChess
 
             Piece targetPiece = play_board[targetX][targetY];
 
-            // Mutăm temporar piesa
             play_board[targetX][targetY] = movingPiece;
-            play_board[originalX][originalY] = new Piece(this, originalX, originalY); // pătrat gol
+            play_board[originalX][originalY] = new Piece(this, originalX, originalY);
 
             int oldX = movingPiece.x;
             int oldY = movingPiece.y;
             movingPiece.x = targetX;
             movingPiece.y = targetY;
 
-            // Verificăm dacă regele jucătorului e în șah
             King king = FindKing(movingPiece.white);
             bool inCheck = king.IsInCheck();
 
-            // Revenim la poziția inițială
             play_board[originalX][originalY] = movingPiece;
             play_board[targetX][targetY] = targetPiece;
             movingPiece.x = oldX;
@@ -266,6 +222,7 @@ namespace CamelRiderChess
             }
             return false;
         }
+
         public void SendMoveToServer(string move)
         {
             try
@@ -277,7 +234,5 @@ namespace CamelRiderChess
                 MessageBox.Show("Eroare trimitere mutare: " + ex.Message);
             }
         }
-       
-
     }
 }
